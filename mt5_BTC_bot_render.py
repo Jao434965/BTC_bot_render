@@ -4,6 +4,7 @@ from datetime import datetime
 import requests
 import random
 import os
+from flask import Flask
 
 # ----------------------------- TELEGRAM -----------------------------
 TELEGRAM_BOT_TOKEN = os.getenv("18263528543:AAGsY40ZAAecdY09uFxhzxOG3VAhFbjl6A")
@@ -58,7 +59,6 @@ SYMBOL = "BTCUSD"
 TIMEFRAME = "M15"
 
 def generate_signal():
-    """Simula sinais de trade BUY ou SELL"""
     direction = random.choice(["BUY", "SELL"])
     price = round(random.uniform(30000, 40000), 2)
     sl = price - 200 if direction == "BUY" else price + 200
@@ -69,15 +69,26 @@ def generate_signal():
 # ----------------------------- LOOP PRINCIPAL -----------------------------
 LOOP_INTERVAL = 60  # segundos
 
-while True:
-    direction, entry, sl, tp1, tp2 = generate_signal()
-    
-    # Envia para Telegram
-    telegram_bot.send_signal(SYMBOL, direction, entry, sl, tp1, tp2, TIMEFRAME)
-    
-    # Salva log
-    write_trade_log([datetime.now(), SYMBOL, direction, entry, sl, tp1, tp2])
-    
-    print(f"{datetime.now()} - Sinal enviado: {direction} {entry}")
-    
-    time.sleep(LOOP_INTERVAL)
+def bot_loop():
+    while True:
+        direction, entry, sl, tp1, tp2 = generate_signal()
+        telegram_bot.send_signal(SYMBOL, direction, entry, sl, tp1, tp2, TIMEFRAME)
+        write_trade_log([datetime.now(), SYMBOL, direction, entry, sl, tp1, tp2])
+        print(f"{datetime.now()} - Sinal enviado: {direction} {entry}")
+        time.sleep(LOOP_INTERVAL)
+
+# ----------------------------- FLASK WEB SERVICE -----------------------------
+app = Flask(__name__)
+
+@app.route("/")
+def index():
+    return "Bot rodando! ✅"
+
+if __name__ == "__main__":
+    # Inicia o loop do bot em background
+    from threading import Thread
+    Thread(target=bot_loop, daemon=True).start()
+
+    # Sobe Flask na porta 10000 (Render detecta como web service)
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
