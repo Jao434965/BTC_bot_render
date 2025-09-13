@@ -80,3 +80,4 @@ LOG_FILE = "trades_log.csv"
 ...     print(f"{datetime.now()} - Sinal enviado: {direction} {entry}")
 ...     
 ...     time.sleep(LOOP_INTERVAL)
+
